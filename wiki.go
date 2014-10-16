@@ -19,6 +19,7 @@ var edit_path string = "/edit/"
 var save_path string = "/save/"
 
 var template_dir string = "templates/"
+var templates = template.Must(template.ParseFiles(template_dir + "edit.html", template_dir + "view.html"))
 
 var debug_enabled int = 1
 
@@ -44,15 +45,10 @@ func loadPage(title string) (*Page, error) {
   return &Page{Title: title, Body: body}, nil
 }
 
-func renderTemplate(w http.ResponseWriter, p *Page, template_name string) {
-    template_path := template_dir + template_name + ".html"
 
-    t, err := template.ParseFiles(template_path)
-    if err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-      return
-    }
-    err = t.Execute(w, p)
+func renderTemplate(w http.ResponseWriter, p *Page, template_name string) {
+
+    err := templates.ExecuteTemplate(w, template_name + ".html", p)
     if err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
       return
