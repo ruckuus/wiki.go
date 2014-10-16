@@ -5,6 +5,7 @@ import (
   "strings"
   "io/ioutil"
   "net/http"
+  "html/template"
 )
 
 type Page struct {
@@ -13,7 +14,12 @@ type Page struct {
 }
 
 var post_dir string = "_posts/"
-var view_slug string = "/view/"
+var view_path string = "/view/"
+var edit_path string = "/edit/"
+var save_path string = "/save/"
+
+var template_dir string = "templates/"
+
 var debug_enabled int = 1
 
 func debug(msg string) {
@@ -45,24 +51,44 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
   fmt.Fprintf(w, "<h1>Posts</h1>")
   for _, f := range files {
     post := strings.Split(f.Name(), ".")
-    fmt.Fprintf(w, "<h2><a href=\"%s%s\">%s</a></h2>", view_slug, string(post[0]), string(post[0]))
+    fmt.Fprintf(w, "<h2><a href=\"%s%s\">%s</a></h2>", view_path, string(post[0]), string(post[0]))
   }
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
   debug("Inside viewHandler")
-  title := r.URL.Path[len("/view/"):]
+  title := r.URL.Path[len(view_path):]
   p, _ := loadPage(title)
 
   if p != nil {
-    fmt.Fprintf(w, "<h1>%s</h1><body>%s</body>", string(p.Title), string(p.Body))
+    t, _ := template.ParseFiles(template_dir + "view.html")
+    t.Execute(w, p)
   } else {
     fmt.Fprintf(w, "Internal Server Error")
   }
 }
 
+func editHandler(w http.ResponseWriter, r *http.Request) {
+  debug("Inside editHandler")
+  title := r.URL.Path[len(edit_path):]
+  p, _ := loadPage(title)
+
+  if p != nil {
+    t, _ := template.ParseFiles(template_dir + "edit.html")
+    t.Execute(w, p)
+  } else {
+    fmt.Fprintf(w, "Internal Server Error")
+  }
+}
+
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func main() {
   http.HandleFunc("/", indexHandler)
-  http.HandleFunc(view_slug, viewHandler)
+  http.HandleFunc(view_path, viewHandler)
+  http.HandleFunc(edit_path, editHandler)
+  http.HandleFunc(save_path, saveHandler)
   http.ListenAndServe(":8080", nil)
 }
