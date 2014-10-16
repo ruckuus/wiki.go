@@ -45,6 +45,13 @@ func loadPage(title string) (*Page, error) {
   return &Page{Title: title, Body: body}, nil
 }
 
+func renderTemplate(w http.ResponseWriter, p *Page, template_name string) {
+    template_path := template_dir + template_name + ".html"
+
+    t, _ := template.ParseFiles(template_path)
+    t.Execute(w, p)
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
   debug("Inside indexHandler")
   files, _ := ioutil.ReadDir(post_dir)
@@ -61,8 +68,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
   p, _ := loadPage(title)
 
   if p != nil {
-    t, _ := template.ParseFiles(template_dir + "view.html")
-    t.Execute(w, p)
+    renderTemplate(w, p, "view")
   } else {
     fmt.Fprintf(w, "Internal Server Error")
   }
@@ -74,8 +80,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
   p, _ := loadPage(title)
 
   if p != nil {
-    t, _ := template.ParseFiles(template_dir + "edit.html")
-    t.Execute(w, p)
+    renderTemplate(w, p, "edit")
   } else {
     fmt.Fprintf(w, "Internal Server Error")
   }
