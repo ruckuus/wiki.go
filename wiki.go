@@ -29,9 +29,8 @@ func debug(msg string) {
 }
 
 func (p *Page) save() error {
-  filename := p.Title + ".txt"
+  filename := post_dir + p.Title + ".txt"
   return ioutil.WriteFile(filename, p.Body, 0600)
-
 }
 
 func loadPage(title string) (*Page, error) {
@@ -65,29 +64,40 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func viewHandler(w http.ResponseWriter, r *http.Request) {
   debug("Inside viewHandler")
   title := r.URL.Path[len(view_path):]
-  p, _ := loadPage(title)
+  p, err := loadPage(title)
 
-  if p != nil {
-    renderTemplate(w, p, "view")
-  } else {
-    fmt.Fprintf(w, "Internal Server Error")
+  if err != nil {
+    http.Redirect(w, r, "/edit/"+title, http.StatusFound)
   }
+  renderTemplate(w, p, "view")
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
   debug("Inside editHandler")
   title := r.URL.Path[len(edit_path):]
-  p, _ := loadPage(title)
+  p, err := loadPage(title)
 
-  if p != nil {
-    renderTemplate(w, p, "edit")
-  } else {
-    fmt.Fprintf(w, "Internal Server Error")
+  if err != nil {
+    var body []byte
+    if p != nil {
+      body = p.Body
+    } else {
+      body = []byte("New Article")
+    }
+    p = &Page{Title: title, Body: body}
   }
+  renderTemplate(w, p, "edit")
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
+  debug("Inside saveHandler")
+  title := r.URL.Path[len(save_path):]
+  body := r.FormValue("body")
 
+  p := &Page{Title: title, Body: []byte(body)}
+  p.save()
+
+  http.Redirect(w, r, view_path + title, http.StatusFound)
 }
 
 func main() {
