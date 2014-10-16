@@ -47,8 +47,17 @@ func loadPage(title string) (*Page, error) {
 func renderTemplate(w http.ResponseWriter, p *Page, template_name string) {
     template_path := template_dir + template_name + ".html"
 
-    t, _ := template.ParseFiles(template_path)
-    t.Execute(w, p)
+    t, err := template.ParseFiles(template_path)
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    err = t.Execute(w, p)
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+
+    }
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,11 +87,9 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
   p, err := loadPage(title)
 
   if err != nil {
-    var body []byte
+    body := []byte("New Article")
     if p != nil {
       body = p.Body
-    } else {
-      body = []byte("New Article")
     }
     p = &Page{Title: title, Body: body}
   }
@@ -95,7 +102,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
   body := r.FormValue("body")
 
   p := &Page{Title: title, Body: []byte(body)}
-  p.save()
+  err := p.save()
+  if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+  }
 
   http.Redirect(w, r, view_path + title, http.StatusFound)
 }
