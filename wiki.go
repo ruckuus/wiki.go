@@ -38,7 +38,6 @@ func debug(msg string) {
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 	debug("Inside getTitle with parameter:")
 	m := validPath.FindStringSubmatch(r.URL.Path)
-	debug(r.URL.Path)
 	if m == nil {
 		http.NotFound(w, r)
 		return "", errors.New("Invalid Page Title")
