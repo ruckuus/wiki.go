@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -19,13 +20,14 @@ var post_dir string = "_posts/"
 var view_path string = "/view/"
 var edit_path string = "/edit/"
 var save_path string = "/save/"
+var api_path string = "/api/"
 
 var template_dir string = "templates/"
 var templates = template.Must(template.ParseFiles(template_dir+"edit.html", template_dir+"view.html"))
 
 var debug_enabled int = 1
 
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$") // 1st group: action, 2nd group: page title
+var validPath = regexp.MustCompile("^/(api|edit|save|view)/([a-zA-Z0-9]+)$") // 1st group: action, 2nd group: page title
 
 func debug(msg string) {
 	if debug_enabled != 0 {
@@ -122,6 +124,21 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	http.Redirect(w, r, view_path+title, http.StatusFound)
 }
 
+func apiHandler(w http.ResponseWriter, r *http.Request, title string) {
+	debug("Inside apiHandler")
+
+	p, err := loadPage(title)
+
+	if err != nil {
+		http.Redirect(w, r, edit_path+title, http.StatusFound)
+	}
+	//renderTemplate(w, p, "view")
+
+	jsonDataRaw := map[string]string{"title": p.Title, "content": string(p.Body)}
+	jsonData, _ := json.Marshal(jsonDataRaw)
+	fmt.Fprintf(w, string(jsonData))
+}
+
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
@@ -138,5 +155,6 @@ func main() {
 	http.HandleFunc(view_path, makeHandler(viewHandler))
 	http.HandleFunc(edit_path, makeHandler(editHandler))
 	http.HandleFunc(save_path, makeHandler(saveHandler))
+	http.HandleFunc(api_path, makeHandler(apiHandler))
 	http.ListenAndServe(":8080", nil)
 }
