@@ -131,7 +131,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request, title string) {
 	if err != nil {
 		http.Redirect(w, r, edit_path+title, http.StatusFound)
 	}
-	//renderTemplate(w, p, "view")
 
 	jsonDataRaw := map[string]string{"title": p.Title, "content": string(p.Body)}
 	jsonData, _ := json.Marshal(jsonDataRaw)
